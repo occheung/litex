@@ -20,7 +20,7 @@ CPU_VARIANTS = ["standard"]
 # FemtoRV ------------------------------------------------------------------------------------------
 
 
-class OpenPitonRV64(CPU):
+class OpenPiton(CPU):
     name = "openpiton"
     human_name = "OpenPiton RISC-V 64Bit SoC"
     variants = CPU_VARIANTS
@@ -31,7 +31,10 @@ class OpenPitonRV64(CPU):
     linker_output_format = "elf64-littleriscv"
     nop = "nop"
     # FIXME: is this correct?
-    io_regions = {0x00000000: 0x80000000}  # Origin, Length.
+    # io_regions = {0x00000000: 0x80000000}  # Origin, Length
+    io_regions           = {0x1200_0000: 0x7000_0000} # Origin, Length.
+    family               = "riscv"
+
 
     # GCC Flags.
     @property
@@ -45,8 +48,9 @@ class OpenPitonRV64(CPU):
     def mem_map(self):
         # Rocket reserves the first 256Mbytes for internal use, so we must change default mem_map.
         return {
-            "csr"      : 0x12000000,
-            "main_ram" : 0x80000000,
+            "rom"      : 0x1000_0000,
+            "csr"      : 0x1200_0000,
+            "main_ram" : 0x8000_0000
         }
 
 
