@@ -1,1 +1,1 @@
-from litex.soc.cores.cpu.openpiton.core import OpenPitonRV64
+from litex.soc.cores.cpu.openpiton.core import OpenPiton

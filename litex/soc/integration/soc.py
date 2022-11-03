@@ -1399,7 +1399,6 @@ class LiteXSoC(SoC):
 
         # IRQ.
         if self.irq.enabled:
-            # FIXME: look at me
             self.irq.add(name, use_loc_if_exists=True)
         else:
             self.add_constant("UART_POLLING")
