@@ -48,8 +48,8 @@ class OpenPiton(CPU):
     def mem_map(self):
         # Rocket reserves the first 256Mbytes for internal use, so we must change default mem_map.
         return {
-            "rom"      : 0x1000_0000,
             "csr"      : 0x1200_0000,
+            # "rom"      : 0x1000_0000,
             "main_ram" : 0x8000_0000
         }
 
