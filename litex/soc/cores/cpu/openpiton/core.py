@@ -24,8 +24,8 @@ class OpenPiton(CPU):
     name = "openpiton"
     human_name = "OpenPiton RISC-V 64Bit SoC"
     variants = CPU_VARIANTS
-    data_width = 64
-    addr_width = 32
+    data_width = 512
+    addr_width = 64
     endianness = "little"
     gcc_triple = CPU_GCC_TRIPLE_RISCV64
     linker_output_format = "elf64-littleriscv"
@@ -64,7 +64,7 @@ class OpenPiton(CPU):
         self.mem_axi = mem_axi = axi.AXIInterface(
             data_width=self.data_width, address_width=self.addr_width, id_width=4)
 
-        self.mem_wb = mem_wb = wishbone.Interface(data_width=self.data_width, adr_width=32-log2_int(self.data_width//8))
+        self.mem_wb = mem_wb = wishbone.Interface(data_width=self.data_width, adr_width=64-log2_int(self.data_width//8))
         
         # Peripheral buses (Connected to main SoC's bus).
         self.periph_buses = [mem_wb]
