@@ -86,6 +86,9 @@ class OpenPiton(CPU):
             i_sys_clk=ClockSignal("sys"),
             i_sys_rst_n=wait_timer.done,  # Active Low.
 
+            # Additional clocks
+            i_core_ref_clk=ClockSignal("sys"),
+            i_io_clk=ClockSignal("sys"),
 
             i_mc_clk=ClockSignal("sys"),
 
