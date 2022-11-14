@@ -8,6 +8,7 @@ from litex import get_data_mod
 import os
 
 from migen import *
+from migen.genlib.misc import WaitTimer
 
 from litex.soc.interconnect import axi, wishbone
 from litex.soc.cores.cpu import CPU, CPU_GCC_TRIPLE_RISCV64
@@ -71,6 +72,10 @@ class OpenPiton(CPU):
         # Memory buses (Connected directly to LiteDRAM).
         self.memory_buses = []
 
+        wait_timer = WaitTimer(5000)
+        self.submodules += wait_timer
+        self.comb += wait_timer.wait.eq(1)
+
         # OpenPiton RISCV 64 Instance.
         # -----------------
         self.cpu_params = dict(
@@ -78,7 +83,8 @@ class OpenPiton(CPU):
 
             # Clk / Rst.
             i_sys_clk=ClockSignal("sys"),
-            i_sys_rst_n=~ResetSignal("sys"),  # Active Low.
+            i_sys_rst_n=wait_timer.done,  # Active Low.
+
 
             i_mc_clk=ClockSignal("sys"),
 
