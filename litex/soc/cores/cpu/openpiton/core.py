@@ -33,6 +33,7 @@ class OpenPiton(CPU):
     nop = "nop"
     # FIXME: is this correct?
     # io_regions = {0x00000000: 0x80000000}  # Origin, Length
+    reset_address = 0x0000_0000
     io_regions           = {0x1200_0000: 0x7000_0000} # Origin, Length.
     family               = "riscv"
 
@@ -156,11 +157,6 @@ class OpenPiton(CPU):
         # Add Verilog sources.
         # --------------------
         self.add_sources(platform)
-
-    def set_reset_address(self, reset_address):
-        assert not hasattr(self, "reset_address")
-        self.reset_address = reset_address
-        #self.cpu_params.update(p_RESET_ADDR=Constant(reset_address, 32))
 
     @staticmethod
     def add_sources(platform):
