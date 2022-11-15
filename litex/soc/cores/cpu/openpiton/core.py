@@ -169,4 +169,4 @@ class OpenPiton(CPU):
 
     def do_finalize(self):
         assert hasattr(self, "reset_address")
-        self.specials += Instance("OpenPitonRV64", **self.cpu_params)
+        self.specials += Instance("system", **self.cpu_params)
