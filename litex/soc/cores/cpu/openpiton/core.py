@@ -34,14 +34,14 @@ class OpenPiton(CPU):
     # FIXME: is this correct?
     # io_regions = {0x00000000: 0x80000000}  # Origin, Length
     reset_address = 0x0000_0000
-    io_regions           = {0x1200_0000: 0x7000_0000} # Origin, Length.
+    io_regions           = {0x8000_0000: 0x8000_0000} # Origin, Length.
     family               = "riscv"
 
 
     # GCC Flags.
     @property
     def gcc_flags(self):
-        flags = "-march=rv64imc "
+        flags = "-march=rv64imac "
         flags += "-mabi=lp64 "
         flags += "-D__openpitonrv64__ "
         return flags
@@ -50,9 +50,9 @@ class OpenPiton(CPU):
     def mem_map(self):
         # Rocket reserves the first 256Mbytes for internal use, so we must change default mem_map.
         return {
-            "csr"      : 0x1200_0000,
             # "rom"      : 0x1000_0000,
-            "main_ram" : 0x8000_0000
+            "main_ram" : 0x4000_0000,
+            "csr"      : 0x8000_0000
         }
 
 
@@ -165,7 +165,7 @@ class OpenPiton(CPU):
     def add_sources(platform):
         if not os.path.exists("generated.v"):
             os.system("cp ~/research/openpiton/build/generated.v .")
-        platform.add_source("generated.v")
+        platform.add_source("generated.sv")
 
     def do_finalize(self):
         assert hasattr(self, "reset_address")
