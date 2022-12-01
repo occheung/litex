@@ -29,16 +29,16 @@ void isr(void)
     onetime++;
   }
 }
-#elif defined(__openpitonrv64__) /*TODO: Update this function for BP*/ //
-void isr(void)
-{
-  static int onetime = 0;
-  if ( onetime == 0){
-    printf("ISR openpiton\n");
-    printf("TRAP!!\n");
-    onetime++;
-  }
-}
+// #elif defined(__openpitonrv64__) /*TODO: Update this function for BP*/ //
+// void isr(void)
+// {
+//   static int onetime = 0;
+//   if ( onetime == 0){
+//     printf("ISR openpiton\n");
+//     printf("TRAP!!\n");
+//     onetime++;
+//   }
+// }
 #elif defined(__rocket__) || defined(__openc906__)
 #if defined(__openc906__)
 #define PLIC_EXT_IRQ_BASE 16

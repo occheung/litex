@@ -61,7 +61,7 @@ class OpenPiton(CPU):
         self.variant = variant
 
         self.reset = Signal()
-        self.interrupt = Signal(32)
+        # self.interrupt = Signal(32)
 
         self.mem_axi = mem_axi = axi.AXIInterface(
             data_width=self.data_width, address_width=self.addr_width, id_width=4)
@@ -144,7 +144,7 @@ class OpenPiton(CPU):
 
             # TODO: add ddr ready
             i_ddr_ready=1,
-            i_ext_irq=self.interrupt,
+            i_ext_irq=0,
             i_ext_irq_trigger=0,
 
         )
