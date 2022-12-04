@@ -195,7 +195,7 @@ class OpenPiton(CPU):
         # In addition, duplicate the returned value to fill the 512b data width of OpenPiton
         # Then we can avoid head-butting the data processing that the NOC-AXI bridge does
         self.comb += [
-            io_axi_litex.connect(io_axi_down_conv)
+            io_axi_litex.connect(io_axi_down_conv),
             io_axi_litex.r.data[32:].eq(Replicate(io_axi_down_conv.r.data, 512//32))
         ]
 
