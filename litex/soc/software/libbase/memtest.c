@@ -261,7 +261,7 @@ void memspeed(unsigned int *addr, unsigned long size, bool read_only, bool rando
 	volatile unsigned long *array = (unsigned long *)addr;
 	int i;
 	unsigned int seed_32 = 0;
-	uint32_t start, end;
+	uint64_t start, end;
 	unsigned long write_speed = 0;
 	unsigned long read_speed;
 	__attribute__((unused)) unsigned long data;
@@ -281,7 +281,7 @@ void memspeed(unsigned int *addr, unsigned long size, bool read_only, bool rando
 	/* Init timer */
 	timer0_en_write(0);
 	timer0_reload_write(0);
-	timer0_load_write(0xffffffff);
+	timer0_load_write(0xffffffffffffffff);
 	timer0_en_write(1);
 
 	/* Measure Write speed */
