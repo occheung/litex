@@ -1139,7 +1139,7 @@ class SoC(LiteXModule):
     def add_timer(self, name="timer0"):
         from litex.soc.cores.timer import Timer
         self.check_if_exists(name)
-        setattr(self, name, Timer())
+        setattr(self, name, Timer(64))
         if self.irq.enabled:
             self.irq.add(name, use_loc_if_exists=True)
 
