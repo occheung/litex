@@ -63,13 +63,31 @@ class OpenPiton(CPU):
         self.reset = Signal()
         # self.interrupt = Signal(32)
 
+        # AXI bus directly connecting to OpenPiton
         self.mem_axi = mem_axi = axi.AXIInterface(
             data_width=self.data_width, address_width=self.addr_width, id_width=4)
 
-        self.mem_wb = mem_wb = wishbone.Interface(data_width=self.data_width, adr_width=64-log2_int(self.data_width//8))
+        # Wishbone bus for the memory region in LiteX
+        self.mem_wb = mem_wb = wishbone.Interface(
+            data_width=self.data_width, adr_width=64-log2_int(self.data_width//8))
+
+        # Wishbone bus for the I/O region in LiteX
+        self.io_wb = io_wb = wishbone.Interface(data_width=32, adr_width=64-log2_int(32//8))
+
+        # AXI mem bus to LiteX
+        self.mem_axi_litex = mem_axi_litex = axi.AXIInterface(
+            data_width=self.data_width, address_width=self.addr_width, id_width=4)
+
+        # AXI I/O bus to LiteX
+        self.io_axi_litex = io_axi_litex = axi.AXIInterface(
+            data_width=self.data_width, address_width=self.addr_width, id_width=4)
+
+        # Down converted 32 bits AXI I/O bus
+        self.io_axi_down_conv = io_axi_down_conv = axi.AXIInterface(
+            data_width=32, address_width=self.addr_width, id_width=4)
         
         # Peripheral buses (Connected to main SoC's bus).
-        self.periph_buses = [mem_wb]
+        self.periph_buses = [mem_wb, io_wb]
         # Memory buses (Connected directly to LiteDRAM).
         self.memory_buses = []
 
@@ -149,13 +167,42 @@ class OpenPiton(CPU):
 
         )
 
-        # Adapt axi to wishbone
-        # ----------------------------------
+        # OpenPiton to LiteX adapter structure
+        # OpenPiton AXI iface <-> | MEM | <-> MEM AXI LiteX  <Convert> 512b WB
+        #                         | AXI | <-> I/O AXI LiteX <DownCast> 32b AXI <-> 32b WB
+        # WBs at the end are all adapted into 512b WBs
+        # No. Increasing data width is counter productive.
+        # Over-reading the CSRs are not desirable.
 
-        bus_a2w = ResetInserter()(axi.AXI2Wishbone(mem_axi, mem_wb, base_address=0))
+        # OpenPiton to LiteX, AXI Decoder
+        op2litex_decoder = ResetInserter()(
+            axi.AXIDecoder(mem_axi, [
+                (lambda addr: ~addr[31-log2_int(mem_axi.data_width//8)], mem_axi_litex),
+                (lambda addr: addr[31-log2_int(mem_axi.data_width//8)], io_axi_litex)]))
+        self.comb += op2litex_decoder.reset.eq(ResetSignal() | self.reset)
+        self.submodules += op2litex_decoder
+
+        # Memory region path
+        mem_bus_a2w = ResetInserter()(axi.AXI2Wishbone(mem_axi_litex, mem_wb, base_address=0))
         # Note: Must be reset with the CPU.
-        self.comb += bus_a2w.reset.eq(ResetSignal() | self.reset)
-        self.submodules += bus_a2w
+        self.comb += mem_bus_a2w.reset.eq(ResetSignal() | self.reset)
+        self.submodules += mem_bus_a2w
+
+        # I/O region path
+        #
+        # Down cast 512b I/O bus to 32b
+        # Actually better than any other available intermediate logics
+        # In addition, duplicate the returned value to fill the 512b data width of OpenPiton
+        # Then we can avoid head-butting the data processing that the NOC-AXI bridge does
+        self.comb += [
+            io_axi_litex.connect(io_axi_down_conv)
+            io_axi_litex.r.data[32:].eq(Replicate(io_axi_down_conv.r.data, 512//32))
+        ]
+
+        io_bus_a2w = ResetInserter()(axi.AXI2Wishbone(io_axi_down_conv, io_wb, base_address=0))
+        # Note: Must be reset with the CPU.
+        self.comb += io_bus_a2w.reset.eq(ResetSignal() | self.reset)
+        self.submodules += io_bus_a2w
 
         # Add Verilog sources.
         # --------------------
