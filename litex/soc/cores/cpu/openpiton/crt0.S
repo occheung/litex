@@ -1,75 +1,125 @@
-#define MIE_MEIE 	0x800
+.global main
+.global isr
+.global _start
 
-	.global _start
+.global smp_ap_args
+.global smp_ap_target
+.global smp_ap_ready
+
 _start:
-	j reset_vector
+  j crt_init
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
 
-reset_vector:
-	la sp, _fstack
-	la t0, trap_vector
-	csrw mtvec, t0
+trap_entry:
+  sd x1,  - 1*8(sp)
+  sd x5,  - 2*8(sp)
+  sd x6,  - 3*8(sp)
+  sd x7,  - 4*8(sp)
+  sd x10, - 5*8(sp)
+  sd x11, - 6*8(sp)
+  sd x12, - 7*8(sp)
+  sd x13, - 8*8(sp)
+  sd x14, - 9*8(sp)
+  sd x15, -10*8(sp)
+  sd x16, -11*8(sp)
+  sd x17, -12*8(sp)
+  sd x28, -13*8(sp)
+  sd x29, -14*8(sp)
+  sd x30, -15*8(sp)
+  sd x31, -16*8(sp)
+  addi sp,sp,-16*8
+  call isr
+  ld x1 , 15*8(sp)
+  ld x5,  14*8(sp)
+  ld x6,  13*8(sp)
+  ld x7,  12*8(sp)
+  ld x10, 11*8(sp)
+  ld x11, 10*8(sp)
+  ld x12,  9*8(sp)
+  ld x13,  8*8(sp)
+  ld x14,  7*8(sp)
+  ld x15,  6*8(sp)
+  ld x16,  5*8(sp)
+  ld x17,  4*8(sp)
+  ld x28,  3*8(sp)
+  ld x29,  2*8(sp)
+  ld x30,  1*8(sp)
+  ld x31,  0*8(sp)
+  addi sp,sp,16*8
+  mret
+  .text
 
-	// initialize .data
-	la t0, _fdata
-	la t1, _edata
-	la t2, _fdata_rom
-1:	beq t0, t1, 2f
-	lw t3, 0(t2)
-	sw t3, 0(t0)
-	addi t0, t0, 4
-	addi t2, t2, 4
-	j 1b
-2:
 
-	// initialize .bss
-	la t0, _fbss
-	la t1, _ebss
-1:	beq t0, t1, 3f
-	sw zero, 0(t0)
-	addi t0, t0, 4
-	j 1b
-3:
-	// enable external interrupts
-	li t0, MIE_MEIE
-	csrs mie, t0
+crt_init:
+  la sp, _fstack
+  sd zero, smp_ap_ready, t0
+  la t0, trap_entry
+  csrw mtvec, t0
 
-	call main
-1:	j 1b
+smp_select_bp:
+  csrr a0, mhartid
+  beqz a0, data_init  // hart 0 is bp, everyone else is ap
 
-trap_vector:
-	addi sp, sp, -16*4
-	sw ra,  0*4(sp)
-	sw t0,  1*4(sp)
-	sw t1,  2*4(sp)
-	sw t2,  3*4(sp)
-	sw a0,  4*4(sp)
-	sw a1,  5*4(sp)
-	sw a2,  6*4(sp)
-	sw a3,  7*4(sp)
-	sw a4,  8*4(sp)
-	sw a5,  9*4(sp)
-	sw a6, 10*4(sp)
-	sw a7, 11*4(sp)
-	sw t3, 12*4(sp)
-	sw t4, 13*4(sp)
-	sw t5, 14*4(sp)
-	sw t6, 15*4(sp)
-	call isr
-	lw ra,  0*4(sp)
-	lw t0,  1*4(sp)
-	lw t1,  2*4(sp)
-	lw t2,  3*4(sp)
-	lw a0,  4*4(sp)
-	lw a1,  5*4(sp)
-	lw a2,  6*4(sp)
-	lw a3,  7*4(sp)
-	lw a4,  8*4(sp)
-	lw a5,  9*4(sp)
-	lw a6, 10*4(sp)
-	lw a7, 11*4(sp)
-	lw t3, 12*4(sp)
-	lw t4, 13*4(sp)
-	lw t5, 14*4(sp)
-	lw t6, 15*4(sp)
-	addi sp, sp, 16*4
-	mret
+smp_ap_loop:
+  ld t0, smp_ap_ready
+  beqz t0, smp_ap_loop
+smp_ap_boot:
+  fence r, r
+  fence.i  // i$ flush
+  ld a0, smp_ap_args     // hart ID (but next-stage loads its own)
+  ld a1, smp_ap_args+8   // DTB pointer (if provded by litex bios)
+  ld a2, smp_ap_args+16
+  ld a3, smp_ap_target
+  jr a3
+smp_ap_done:
+
+data_init:
+  la t0, _fdata
+  la t1, _edata
+  la t2, _fdata_rom
+data_loop:
+  beq t0,t1,data_done
+  ld t3,0(t2)
+  sd t3,0(t0)
+  add t0,t0,8
+  add t2,t2,8
+  j data_loop
+data_done:
+
+bss_init:
+  la t0, _fbss
+  la t1, _ebss
+bss_loop:
+  beq t0,t1,bss_done
+  sd zero,0(t0)
+  add t0,t0,8
+  j bss_loop
+bss_done:
+
+//  call plic_init // initialize external interrupt controller
+  li t0, 0x800   // external interrupt sources only (using LiteX timer);
+                 // NOTE: must still enable mstatus.MIE!
+  csrw mie,t0
+
+  call main
+inf_loop:
+  j inf_loop
+
+.bss
+  .align 8
+smp_ap_args:
+  .dword 0
+  .dword 0
+  .dword 0
+  .align 8
+smp_ap_target:
+  .dword 0
+  .align 8
+smp_ap_ready:
+  .dword 0
