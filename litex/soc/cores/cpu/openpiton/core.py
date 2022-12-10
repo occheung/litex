@@ -41,8 +41,8 @@ class OpenPiton(CPU):
     # GCC Flags.
     @property
     def gcc_flags(self):
-        flags = "-march=rv64imac "
-        flags += "-mabi=lp64 "
+        flags = "-march=rv64gc "
+        flags += "-mabi=lp64d "
         flags += "-D__openpitonrv64__ "
         return flags
 
